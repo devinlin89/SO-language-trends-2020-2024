@@ -4,6 +4,9 @@
         "matplotlib",
         "pyplot",
         "xlabel",
-        "ylabel"
+        "xticks",
+        "ylabel",
+        "ylim",
+        "yticks"
     ]
 }
