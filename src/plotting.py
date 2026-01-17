@@ -2,6 +2,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from cycler import cycler
+from helpers import truncate_label
+
+
+# High-visibility color set
 
 HIGH_VIS_15 = [
     "#0d49fb",  # vivid blue
@@ -21,21 +25,23 @@ HIGH_VIS_15 = [
     "#e377c2",  # pink
 ]
 
+
+# Global plotting style
+
 def set_plot_style():
     """
-    Sets global Matplotlib style for all figures.
-    Intended for academic / report-ready visualizations.
+    Sets global Matplotlib style for figures.
     """
 
-    plt.rcParams["axes.prop_cycle"] = (cycler(color=HIGH_VIS_15))
+    plt.rcParams["axes.prop_cycle"] = cycler(color=HIGH_VIS_15)
 
     plt.rcParams.update({
-        # Font
+        # Fonts
         "font.family": "serif",
         "font.serif": ["Times New Roman", "DejaVu Serif"],
         "font.size": 12,
 
-        # Figure
+        # Figure resolution
         "figure.dpi": 120,
         "savefig.dpi": 300,
 
@@ -53,15 +59,17 @@ def set_plot_style():
         "lines.markersize": 5,
 
         # Legend
-        "legend.fontsize": 12,
-        "legend.frameon": True,
+        "legend.fontsize": 10,
         "legend.labelspacing": 1.15,
+        "legend.frameon": False,  # no border
 
         # Ticks
         "xtick.labelsize": 12,
         "ytick.labelsize": 12,
     })
 
+
+# Line chart function
 
 def plot_line_chart_top_languages_trends(
     trends_df: pd.DataFrame,
@@ -70,26 +78,25 @@ def plot_line_chart_top_languages_trends(
     y_min: int | None = None,
     y_max: int | None = None
 ):
-
     """
-    Plots line chart for the top n programming languages
+    Plots line chart trends for the top N programming languages
     based on the most recent year's metric value.
 
     Parameters
     ----------
     trends_df : pd.DataFrame
-        DataFrame with a 'Language' column and year columns (e.g. 2020-2024)
+        DataFrame containing a 'Language' column and year columns.
     metric_name : str
-        Name of the metric (e.g. 'Usage', 'Desired', 'Admired')
+        Name of the metric (e.g. Usage, Desired, Loved/Admired).
     top_n : int
-        Number of top languages to plot
+        Number of top languages to plot.
     y_min : int or None
-        Lower bound for y-axis (optional)
+        Optional lower bound for y-axis.
     y_max : int or None
-        Upper bound for y-axis (optional)
+        Optional upper bound for y-axis.
     """
 
-    # Extract year columns
+    # Extract year columns dynamically
     year_columns = (
         trends_df
         .columns
@@ -99,65 +106,141 @@ def plot_line_chart_top_languages_trends(
         .tolist()
     )
 
-    # Select top n languages by most recent year
     latest_year = year_columns[-1]
 
+    # Select top N languages by most recent year
     top_languages = (
         trends_df
         .sort_values(by=latest_year, ascending=False)
         .head(top_n)
+        .reset_index(drop=True)
     )
 
-    # Create figure (A4 portrait)
+    # Create A4 portrait figure
     plt.figure(figsize=(8.27, 11.69))
 
-    for _, row in top_languages.iterrows():
+    # Plot each language
+    for rank, row in top_languages.iterrows():
         plt.plot(
             year_columns,
             row[year_columns],
             marker="o",
-            linewidth=2,
-            label=row["Language"]
+            label=f"{rank + 1}. {row['Language']}"
         )
 
+    # Axis labels
     plt.xlabel("Year")
     plt.ylabel(f"{metric_name} Percentage (%)")
 
-    plt.title(
+    # Centered figure-level title (accounts for legend)
+    plt.suptitle(
         f"{metric_name} Trends of Top {top_n} Programming Languages "
-        f"({year_columns[0]}-{year_columns[-1]})", pad=20
+        f"({year_columns[0]}-{year_columns[-1]})",
+        fontsize=18,
+        y=0.99
     )
 
+    # X-axis formatting
     plt.xticks(year_columns)
 
-    if y_min is not None or y_max is not None:
-        plt.ylim(
-            y_min if y_min is not None else plt.ylim()[0],
-            y_max if y_max is not None else plt.ylim()[1]
-        )
-
+    # Y-axis limits
     ax = plt.gca()
-
     if y_min is not None or y_max is not None:
         ax.set_ylim(
-            bottom=y_min if y_min is not None else None,
-            top=y_max if y_max is not None else None
+            bottom=y_min if y_min is not None else ax.get_ylim()[0],
+            top=y_max if y_max is not None else ax.get_ylim()[1]
         )
-        ax.yaxis.set_minor_locator(MultipleLocator(1))
-        ax.grid(True, which="major", linewidth=0.8)
 
+    # Force ticks every 5 units
     ax.yaxis.set_major_locator(MultipleLocator(5))
 
+    # Legend outside plot
     plt.legend(
-        bbox_to_anchor=(1.02, 1),
-        loc="upper left",
         title="Languages",
         title_fontsize=14,
-        frameon=True
+        bbox_to_anchor=(1.02, 1),
+        loc="upper left"
     )
 
-    plt.grid(True)
     plt.tight_layout()
     plt.show()
+
+
+# Bar chart function
+
+def plot_relative_growth_bar_chart(
+    measures_df: pd.DataFrame,
+    metric_name: str,
+    growth_column: str = "Relative Change (%)",
+    top_n: int = 15
+):
+    """
+    Plots a horizontal bar chart showing relative growth and decline
+    for a given metric.
+
+    Parameters
+    ----------
+    measures_df : pd.DataFrame
+        DataFrame indexed by programming language.
+    metric_name : str
+        Name of the metric (Usage, Desired, Loved/Admired).
+    growth_column : str
+        Column containing relative growth values (percentage).
+    top_n : int
+        Number of top growing and declining languages to display.
+    """
+
+    # Drop missing or infinite values
+    growth_series = (
+        measures_df[growth_column]
+        .replace([float("inf"), -float("inf")], pd.NA)
+        .dropna()
+    )
+
+    # Select top growth and decline
+    top_growth = growth_series.nlargest(top_n)
+    top_decline = growth_series.nsmallest(top_n)
+
+    plot_series = (
+        pd.concat([top_growth, top_decline])
+        .sort_values(ascending=False)
+    )
+
+    plt.figure(figsize=(8.27, 5))
+
+    colors = [
+        "#0d49fb" if value >= 0 else "#e6091c"
+        for value in plot_series.values
+    ]
+
+    plt.bar(
+        plot_series.index,
+        plot_series.values,
+        color=colors
+    )
+
+    plt.xlabel("Programming Language")
+    plt.ylabel("Relative Change (%)")
+
+    plt.xticks(rotation=45, ha="right")
+
+    labels = [truncate_label(l) for l in plot_series.index]
+    positions = range(len(labels))
+
+    ax = plt.gca()
+    ax.set_xticks(positions)
+    ax.set_xticklabels(labels)
+
+    ax.grid(axis="x", which="major")
+
+    plt.title(
+        f"Relative Change in {metric_name} "
+        f"(Top {top_n} Growth and Decline)",
+        pad=20
+    )
+
+    plt.tight_layout(pad=1.5)
+    plt.show()
+
 
 set_plot_style()

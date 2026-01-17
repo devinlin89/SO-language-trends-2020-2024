@@ -94,3 +94,7 @@ def generate_measures_df(metric_name: str,
     ).replace([float("inf"), -float("inf")], pd.NA) * 100
 
     return metric_measures_df
+
+
+def truncate_label(label: str, max_len: int = 16) -> str:
+    return label if len(label) <= max_len else label[:max_len - 6] + "…"
