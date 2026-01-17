@@ -97,4 +97,24 @@ def generate_measures_df(metric_name: str,
 
 
 def truncate_label(label: str, max_len: int = 16) -> str:
+    """
+    Truncates a text label to a specified maximum length.
+
+    If the label exceeds the maximum length, it is shortened and appended
+    with an ellipsis to preserve readability in plots.
+
+    Parameters
+    ----------
+    label : str
+        The label text to be evaluated.
+    max_len : int
+        The maximum allowed length of the label in characters.
+
+    Returns
+    -------
+    str
+        The original label if its length is within the limit;
+        otherwise, a truncated version ending with an ellipsis.
+    """
+
     return label if len(label) <= max_len else label[:max_len - 6] + "…"
