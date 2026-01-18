@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MultipleLocator
 from cycler import cycler
@@ -241,6 +242,113 @@ def plot_relative_growth_bar_chart(
 
     plt.tight_layout(pad=1.5)
     plt.show()
+
+
+# Individual language line chart function
+
+def plot_single_language_trend(
+    trends_df: pd.DataFrame,
+    language: str,
+    metric_name: str,
+    min_range: float = 10
+):
+    """
+    Plots the trend of a single programming language over time.
+    Ensures a minimum y-axis range and annotates net change.
+    """
+
+    # Extract year columns
+    year_columns = (
+        trends_df
+        .columns
+        .drop("Language")
+        .astype(int)
+        .sort_values()
+        .tolist()
+    )
+
+    series = (
+        trends_df
+        .loc[trends_df["Language"] == language, year_columns]
+        .squeeze()
+        .dropna()
+    )
+
+    if len(series) < 2:
+        print(f"Not enough data to plot {language}.")
+        return
+
+    years = series.index.tolist()
+    values = series.values
+
+    plt.figure(figsize=(6, 4))
+
+    plt.plot(
+        years,
+        values,
+        marker="o",
+        linewidth=2
+    )
+
+    plt.title(
+        f"{language} {metric_name} Trend ({years[0]}-{years[-1]})",
+        pad=15
+    )
+    plt.xlabel("Year")
+    plt.ylabel(f"{metric_name} Percentage (%)")
+    plt.xticks(years)
+
+    # Y-axis scaling logic
+    y_min_data = values.min()
+    y_max_data = values.max()
+    data_range = y_max_data - y_min_data
+
+    # Ensure minimum vertical span
+    if data_range < min_range:
+        mid = (y_min_data + y_max_data) / 2
+        y_min = mid - min_range / 2
+        y_max = mid + min_range / 2
+    else:
+        y_min = y_min_data - 0.1 * data_range
+        y_max = y_max_data + 0.1 * data_range
+
+    # Snap to multiples of 10
+    y_min = 10 * np.floor(y_min / 10)
+    y_max = 10 * np.ceil(y_max / 10)
+
+    # Clip to valid percentage range
+    y_min = max(0, y_min)
+    y_max = min(100, y_max)
+
+    ax = plt.gca()
+    ax.set_ylim(y_min, y_max)
+
+    # Major and minor ticks
+    ax.yaxis.set_major_locator(MultipleLocator(10))
+    ax.yaxis.set_minor_locator(MultipleLocator(5))
+
+    ax.grid(True, which="major", linewidth=0.8)
+    ax.grid(True, which="minor", linewidth=0.4, alpha=0.4)
+
+    # Net change annotation
+    net_change = values[-1] - values[0]
+    sign = "+" if net_change >= 0 else ""
+    color = "#0d49fb" if net_change >= 0 else "#e6091c"
+
+    ax.text(
+        0.02,
+        0.95,
+        f"Net change: {sign}{net_change:.1f} pp",
+        transform=ax.transAxes,
+        ha="left",
+        va="top",
+        fontsize=12,
+        color=color
+    )
+
+    plt.tight_layout()
+    plt.show()
+
 
 
 set_plot_style()
