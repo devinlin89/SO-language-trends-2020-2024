@@ -324,11 +324,10 @@ def plot_single_language_trend(
     ax.set_ylim(y_min, y_max)
 
     # Major and minor ticks
-    ax.yaxis.set_major_locator(MultipleLocator(10))
-    ax.yaxis.set_minor_locator(MultipleLocator(5))
+    ax.yaxis.set_major_locator(MultipleLocator(5))
+    ax.yaxis.set_minor_locator(MultipleLocator(1))
 
     ax.grid(True, which="major", linewidth=0.8)
-    ax.grid(True, which="minor", linewidth=0.4, alpha=0.4)
 
     # Net change annotation
     net_change = values[-1] - values[0]
@@ -349,6 +348,142 @@ def plot_single_language_trend(
     plt.tight_layout()
     plt.show()
 
+
+# Gap bar chart function
+
+def plot_gap_bar_chart(
+    gap_series: pd.Series,
+    metric_label: str,
+    top_n: int = 5,
+    figsize: tuple = (8, 6)
+):
+    """
+    Plots a horizontal bar chart showing the gap between two metrics
+    (e.g. Admired-Desired or Usage-Desired).
+
+    Parameters
+    ----------
+    gap_series : pd.Series
+        Series indexed by Language containing gap values (can be positive or negative).
+    metric_label : str
+        Label describing the gap (e.g. "Admired-Desired", "Usage-Desired").
+    top_n : int
+        Number of top positive and top negative gaps to display.
+    figsize : tuple
+        Figure size.
+    """
+
+    # Select top positive and negative gaps
+    top_positive = gap_series.sort_values(ascending=False).head(top_n)
+    top_negative = gap_series.sort_values(ascending=True).head(top_n)
+
+    plot_data = pd.concat([top_positive, top_negative[::-1]])
+
+    # Colors: blue for positive, red for negative
+    colors = plot_data.apply(lambda x: "#0d49fb" if x >= 0 else "#e6091c")
+
+    fig, ax = plt.subplots(figsize=figsize)
+
+    ax.barh(
+        plot_data.index,
+        plot_data.values,
+        color=colors
+    )
+
+    ax.set_xlabel("Distance Percentage Points (%)")
+    ax.set_title(
+        f"{metric_label} \n(Top {top_n} Lowest and Highest)",
+        pad=15
+    )
+
+    ax.xaxis.set_major_locator(MultipleLocator(5))
+    ax.xaxis.set_minor_locator(MultipleLocator(1))
+
+    ax.grid(axis="x", linestyle="-", alpha=0.4)
+    ax.grid(axis="y", visible=False)
+
+    plt.tight_layout()
+    plt.show()
+
+
+# Scatter plot function
+
+def plot_language_scatter(
+    df,
+    x_col: str,
+    y_col: str,
+    title: str,
+    x_label: str,
+    y_label: str,
+    annotate: bool = False
+):
+    """
+    Plots a scatterplot comparing two language metrics (e.g. Usage vs Desired).
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        DataFrame indexed by language.
+    x_col : str
+        Column name for x-axis values.
+    y_col : str
+        Column name for y-axis values.
+    title : str
+        Plot title.
+    x_label : str
+        X-axis label.
+    y_label : str
+        Y-axis label.
+    annotate : bool, optional
+        Whether to annotate points with language names.
+    """
+
+    x = df[x_col]
+    y = df[y_col]
+
+    # Axis limits snapped to multiples of 10
+    min_val = int(np.floor(min(x.min(), y.min()) / 10) * 10)
+    max_val = int(np.ceil(max(x.max(), y.max()) / 10) * 10)
+
+    fig, ax = plt.subplots(figsize=(7, 7))
+
+    ax.scatter(x, y, s=30, marker="x")
+
+    # 45-degree reference line
+    ax.plot(
+        [min_val, max_val],
+        [min_val, max_val],
+        linestyle="--",
+        linewidth=1,
+        alpha=0.7
+    )
+
+    ax.set_xlim(min_val, max_val)
+    ax.set_ylim(min_val, max_val)
+
+    ax.set_aspect("equal", adjustable="box")
+
+    ax.set_title(title, pad=20)
+    ax.set_xlabel(x_label)
+    ax.set_ylabel(y_label)
+
+    ax.set_xticks(range(min_val, max_val + 1, 10))
+    ax.set_yticks(range(min_val, max_val + 1, 10))
+
+    ax.grid(True)
+
+    if annotate:
+        for lang, xv, yv in zip(df.index, x, y):
+            ax.annotate(
+                lang,
+                (xv, yv),
+                textcoords="offset points",
+                xytext=(5, 5),
+                fontsize=8
+            )
+
+    plt.tight_layout()
+    plt.show()
 
 
 set_plot_style()
