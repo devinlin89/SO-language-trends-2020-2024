@@ -5,6 +5,27 @@ from matplotlib.ticker import MultipleLocator
 from cycler import cycler
 from helpers import truncate_label
 
+from pathlib import Path
+FIG_DIR = Path("../figures")
+
+# Saving Function
+
+def save_figure(
+    filename: str,
+    folder: str,
+    dpi: int = 300,
+    bbox_inches: str = "tight"
+):
+    """
+    Saves the current Matplotlib figure to the figures directory.
+    """
+
+    folder_path = FIG_DIR / folder
+    folder_path.mkdir(parents=True, exist_ok=True)
+
+    path = folder_path / filename
+    plt.savefig(path, dpi=dpi, bbox_inches=bbox_inches)
+
 
 # High-visibility color set
 
@@ -77,7 +98,9 @@ def plot_line_chart_top_languages_trends(
     metric_name: str,
     top_n: int = 15,
     y_min: int | None = None,
-    y_max: int | None = None
+    y_max: int | None = None,
+    save: bool = False,
+    filename: str | None = None
 ):
     """
     Plots line chart trends for the top N programming languages
@@ -164,6 +187,12 @@ def plot_line_chart_top_languages_trends(
     )
 
     plt.tight_layout()
+
+    if save:
+        if filename is None:
+            filename = f"{metric_name.lower().replace("/", "_")}_trends_line_chart.png"
+        save_figure(filename, folder="Top_Languages_Trends_Line_Charts")
+
     plt.show()
 
 
@@ -173,7 +202,9 @@ def plot_relative_growth_bar_chart(
     measures_df: pd.DataFrame,
     metric_name: str,
     growth_column: str = "Relative Change (%)",
-    top_n: int = 15
+    top_n: int = 15,
+    save: bool = False,
+    filename: str | None = None
 ):
     """
     Plots a horizontal bar chart showing relative growth and decline
@@ -241,6 +272,12 @@ def plot_relative_growth_bar_chart(
     )
 
     plt.tight_layout(pad=1.5)
+
+    if save:
+        if filename is None:
+            filename = f"{metric_name.lower().replace("/", "_")}_relative_growth_bar_chart.png"
+        save_figure(filename, folder="Relative_Change_Bar_Charts")
+
     plt.show()
 
 
@@ -250,7 +287,9 @@ def plot_single_language_trend(
     trends_df: pd.DataFrame,
     language: str,
     metric_name: str,
-    min_range: float = 10
+    min_range: float = 10,
+    save: bool = False,
+    filename: str | None = None
 ):
     """
     Plots the trend of a single programming language over time.
@@ -346,6 +385,12 @@ def plot_single_language_trend(
     )
 
     plt.tight_layout()
+
+    if save:
+        if filename is None:
+            filename = f"{language.lower().replace("/", "_")}_{metric_name.lower().replace("/", "_")}_trend_line_chart.png"
+        save_figure(filename, folder=f"Individual_Language_Line_Charts/{metric_name.replace("/", "_")}")
+
     plt.show()
 
 
