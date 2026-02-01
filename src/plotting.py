@@ -376,7 +376,7 @@ def plot_single_language_trend(
     ax.text(
         0.02,
         0.95,
-        f"Net change: {sign}{net_change:.1f} pp",
+        f"Net change: {sign}{net_change:.2f} pp",
         transform=ax.transAxes,
         ha="left",
         va="top",
