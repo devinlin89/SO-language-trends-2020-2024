@@ -400,7 +400,9 @@ def plot_gap_bar_chart(
     gap_series: pd.Series,
     metric_label: str,
     top_n: int = 5,
-    figsize: tuple = (8, 6)
+    figsize: tuple = (8, 6),
+    save: bool = False,
+    filename: str | None = None
 ):
     """
     Plots a horizontal bar chart showing the gap between two metrics
@@ -448,6 +450,12 @@ def plot_gap_bar_chart(
     ax.grid(axis="y", visible=False)
 
     plt.tight_layout()
+
+    if save:
+        if filename is None:
+            filename = f"{metric_label.lower().replace("/", "_")}_gap_bar_chart.png"
+        save_figure(filename, folder="Gap_Bar_Charts")
+
     plt.show()
 
 
